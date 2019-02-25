@@ -144,24 +144,31 @@ class ControllerExtensionPaymentNextPay extends Controller {
 
 		    // Hack detection
 		    if(!$order_id_t) die('ERROR - Hack attempt detected');
+		    // Hack detection by order
+		    if($order_id_t != $order_id) die('ERROR - Hack attempt detected');
 		    
 		    // Load model for checkout page
 		    $this->load->model('checkout/order');
 
 		    // Load order, and verify the order has not been processed before, if it has, go to success page
 		    $order_info = $this->model_checkout_order->getOrder($order_id_t);
-
+		    
 		    if ($order_info) {
 			    if ($order_info['order_status_id'] != 0) {
 				    $this->response->redirect($this->url->link('checkout/success'));
 			    }
 		    }
-
+		    
+		    $this->load->model('checkout/order');
+            $order_info = $this->model_checkout_order->getOrder($order_id);
+            if (!$order_info)
+					throw new Exception($this->language->get('error_order_id'));
 		    
 		    // List of vars from reply
-		    $transaction = $g['TransID'];	// Transaction ID
-		    $amount = $g['Amount'];			// Order Amount
-		    $crypt = $g['Crypt'];			// Crypt of vars
+		    $transaction = $trans_id;	// Transaction ID
+		    $amount = $this->correctAmount($order_info);
+		    //$amount = $g['Amount'];			// Order Amount
+		    //$crypt = $g['Crypt'];			// Crypt of vars
 		    
 		    $api_key = $this->config->get('payment_nextpay_api_key');
 		    
@@ -188,5 +195,12 @@ class ControllerExtensionPaymentNextPay extends Controller {
 		    }catch (Exception $e) { echo 'Error'. $e->getMessage();  }
 		}
 		$this->response->redirect($this->url->link('checkout/failure', 'fail=1'));
+	}
+	
+	private function correctAmount($order_info) {
+		$amount = $this->currency->format($order_info['total'], $order_info['currency_code'], $order_info['currency_value'], false);
+		$amount = round($amount);
+		$amount = $this->currency->convert($amount, $order_info['currency_code'], "TOM");
+		return (int)$amount;
 	}
 }
