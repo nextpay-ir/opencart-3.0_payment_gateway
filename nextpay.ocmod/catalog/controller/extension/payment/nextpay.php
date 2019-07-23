@@ -78,7 +78,6 @@ class ControllerExtensionPaymentNextPay extends Controller {
 
 		$enc = strtr(base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, hash('sha256', $this->config->get('config_encryption'), true), $this->session->data['order_id'], MCRYPT_MODE_ECB)), '+/=', '-_,');
 
-		$route = $_GET['route'];
 
 		// Set success/fail urls
 		$data['callback'] = str_replace("&amp;",'&',$this->url->link('extension/payment/nextpay/payment', 'e=' . urlencode($enc) . '&', true));
